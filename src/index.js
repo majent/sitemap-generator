@@ -29,7 +29,8 @@ module.exports = function SitemapGenerator(uri, opts) {
     changeFreq: '',
     priorityMap: [],
     ignoreAMP: true,
-    ignore: null
+    ignore: null,
+    ignoreCanonical: false
   };
 
   if (!uri) {
@@ -85,7 +86,12 @@ module.exports = function SitemapGenerator(uri, opts) {
 
   crawler.on('fetchclienterror', (queueError, errorData) => {
     if (errorData.code === 'ENOTFOUND') {
-      emitError(404, `Site ${JSON.stringify(queueError)} could not be found. REQUEST: ${JSON.stringify(errorData)}`);
+      emitError(
+        404,
+        `Site ${JSON.stringify(
+          queueError
+        )} could not be found. REQUEST: ${JSON.stringify(errorData)}`
+      );
     } else {
       emitError(400, errorData.message);
     }
@@ -95,7 +101,8 @@ module.exports = function SitemapGenerator(uri, opts) {
 
   // fetch complete event
   crawler.on('fetchcomplete', (queueItem, page) => {
-    const { url, depth } = queueItem;
+    let url = queueItem.url;
+    const depth = queueItem.depth;
 
     if (
       (opts.ignore && opts.ignore(url)) ||
@@ -104,6 +111,15 @@ module.exports = function SitemapGenerator(uri, opts) {
     ) {
       emitter.emit('ignore', url);
     } else {
+      if (opts.ignoreCanonical && /(<link(?=[^>]+canonical).*?>)/.test(page)) {
+        const line = page.match(/<link.*rel="canonical".*\/>/);
+        if (line) {
+          const href = 'href="';
+          const start = line[0].lastIndexOf(href) + href.length;
+          const end = line[0].indexOf('"', start);
+          url = line[0].substring(start, end);
+        }
+      }
       emitter.emit('add', url);
 
       if (sitemapPath !== null) {
