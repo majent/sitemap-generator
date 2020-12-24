@@ -10,6 +10,7 @@ module.exports = function SitemapRotator(
   const sitemaps = [];
   let count = 0;
   let current = null;
+  const urls = [];
 
   // return temp sitemap paths
   const getPaths = () =>
@@ -51,7 +52,10 @@ module.exports = function SitemapRotator(
         : priorityMap[priorityMap.length - 1];
     }
 
+    if (urls.includes(url)) return;
+
     current.write(url, currentDateTime, changeFreq, priority);
+    urls.push(url);
 
     count += 1;
   };
