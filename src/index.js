@@ -32,6 +32,7 @@ module.exports = function SitemapGenerator(uri, opts) {
     ignore: null,
     ignoreCanonical: false
   };
+  const href = 'href="';
 
   if (!uri) {
     throw new Error('Requires a valid URL.');
@@ -111,11 +112,10 @@ module.exports = function SitemapGenerator(uri, opts) {
     ) {
       emitter.emit('ignore', url);
     } else {
-      if (opts.ignoreCanonical && /(<link(?=[^>]+canonical).*?>)/.test(page)) {
-        const line = page.match(/<link.*rel="canonical".*\/>/);
+      if (opts.ignoreCanonical) {
+        const line = page.match(/(<link(?=[^>]+canonical).*?>)/);
         if (line) {
-          const href = 'href="';
-          const start = line[0].lastIndexOf(href) + href.length;
+          const start = line[0].indexOf(href) + href.length;
           const end = line[0].indexOf('"', start);
           url = line[0].substring(start, end);
         }
